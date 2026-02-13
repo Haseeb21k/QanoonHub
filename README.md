@@ -111,7 +111,3 @@ This project is licensed under the terms specified in [LICENSE.md](LICENSE.md).
 Developed as a Web Engineering and Technologies project for law firm case management.
 
 ---
-
-For detailed setup instructions and troubleshooting, see:
-- [CHAT_SETUP.md](CHAT_SETUP.md)
-- [CHAT_TROUBLESHOOTING.md](CHAT_TROUBLESHOOTING.md)

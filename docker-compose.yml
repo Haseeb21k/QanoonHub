@@ -1,0 +1,72 @@
+version: "3.8"
+
+services:
+  # Backend service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: qanoonhub-backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=${MONGO_URI}
+      - MONGO_DBNAME=${MONGO_DBNAME}
+      - JWT_SECRET=${JWT_SECRET}
+      - SERVER_PORT=9000
+      - CLIENT_URL=${CLIENT_URL:-http://localhost}
+    volumes:
+      - ./uploads:/app/uploads
+    networks:
+      - qanoonhub-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:9000/api/cases', (r) => {process.exit(r.statusCode === 200 || r.statusCode === 401 ? 0 : 1)})",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend service (using Caddy)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: qanoonhub-frontend
+    restart: unless-stopped
+    networks:
+      - qanoonhub-network
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # Caddy reverse proxy
+  caddy:
+    image: caddy:2-alpine
+    container_name: qanoonhub-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - qanoonhub-network
+    depends_on:
+      - backend
+      - frontend
+
+networks:
+  qanoonhub-network:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
